@@ -48,6 +48,8 @@ class Dataset(BaseDataset):
         masks = [(m > 0).astype("float32") for m in masks]
         mask = np.stack(masks, axis=-1).astype("float")
 
+
+        image = image.transpose(1, 2, 0)
         if self.augmentation:
             sample = self.augmentation(image=image, mask=mask)
             image, mask = sample["image"], sample["mask"]

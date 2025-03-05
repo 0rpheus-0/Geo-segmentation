@@ -31,7 +31,8 @@ def visualize_mask(mc_mask: np.ndarray):
 
 def visualize_multichennel_mask(img: np.ndarray, multichennel_mask: np.ndarray):
     _, axes = plt.subplots(1, 2, figsize=(10, 5))
-    axes[0].imshow(img[0])
+    img = img.transpose(2, 0, 1)
+    axes[0].imshow(img[0], cmap="grey")
     multichennel_mask = multichennel_mask.transpose(2, 0, 1)
     mask_to_show, title = visualize_mask(multichennel_mask)
     axes[1].imshow(mask_to_show)
