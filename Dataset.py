@@ -6,14 +6,9 @@ import rasterio
 from rasterio.plot import adjust_band
 from constants import LABEL_COLORS_FILE, CLASSES
 
+
 class Dataset(BaseDataset):
-    def __init__(
-        self,
-        images_dir,
-        masks_dir,
-        augmentation=None,
-        preprocessing=None
-    ):
+    def __init__(self, images_dir, masks_dir, augmentation=None, preprocessing=None):
         self.images_paths = sorted(glob(f"{images_dir}/*"))
         self.masks_paths = sorted(glob(f"{masks_dir}/*"))
 
@@ -47,7 +42,6 @@ class Dataset(BaseDataset):
         masks = [cv2.inRange(mask, color, color) for color in self.cls_colors.values()]
         masks = [(m > 0).astype("float32") for m in masks]
         mask = np.stack(masks, axis=-1).astype("float")
-
 
         image = image.transpose(1, 2, 0)
         if self.augmentation:
