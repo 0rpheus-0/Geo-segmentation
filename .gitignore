@@ -1,5 +1,6 @@
 __pycache__
 geo_dataset
+geo_dataset.zip
 venv
-info.py
-test.py
+models
+models.zip
