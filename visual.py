@@ -6,7 +6,6 @@ colors_imshow = {
     "City": np.array([170, 240, 209]),
     "Cloud": np.array([184, 61, 245]),
     "Field": np.array([242, 242, 13]),
-    "Mountains": np.array([61, 61, 245]),
     "Sand": np.array([241, 184, 22]),
     "Trees": np.array([63, 220, 32]),
     "Water": np.array([13, 160, 236]),
@@ -31,7 +30,7 @@ def visual_mask(mask: np.ndarray):
 
 
 def visualize_multichennel_mask(image: np.ndarray, multichennel_mask: np.ndarray):
-    _, axes = plt.subplots(1, 2, figsize=(10, 5))
+    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
     axes[0].imshow(image[0], cmap="grey")
     mask_to_show, title = visual_mask(multichennel_mask)
     axes[1].imshow(mask_to_show)
@@ -58,7 +57,7 @@ def reverse_normalize(img, mean, std):
 
 
 def visualize_result(img: np.ndarray, mask_gt: np.ndarray, mask_pred: np.ndarray):
-    _, axes = plt.subplots(1, 3, figsize=(10, 5))
+    fig, axes = plt.subplots(1, 3, figsize=(10, 5))
 
     axes[0].imshow(img[0], cmap="grey")
 
@@ -67,14 +66,51 @@ def visualize_result(img: np.ndarray, mask_gt: np.ndarray, mask_pred: np.ndarray
         [f"{cls}: {square_ratios[cls] * 100:.1f}%" for cls in CLASSES]
     )
     axes[1].imshow(mask_gt, cmap="twilight")
-    axes[1].set_title("GT мask\n" + title)
+    axes[1].set_title(title)
 
     mask_pred, square_ratios = color_mask(mask_pred)
     title = "Square:\n" + "\n".join(
         [f"{cls}: {square_ratios[cls] * 100:.1f}%" for cls in CLASSES]
     )
     axes[2].imshow(mask_pred, cmap="twilight")
-    axes[2].set_title("PRED мask\n" + title)
+    axes[2].set_title(title)
+
+    plt.tight_layout()
+    plt.show()
+
+
+def visualize_predict(img: np.ndarray, mask_pred: np.ndarray):
+    _, axes = plt.subplots(1, 2, figsize=(10, 5))
+
+    axes[0].imshow(img[0], cmap="grey")
+
+    mask_pred, square_ratios = color_mask(mask_pred)
+    title = "Square:\n" + "\n".join(
+        [f"{cls}: {square_ratios[cls] * 100:.1f}%" for cls in CLASSES]
+    )
+    axes[1].imshow(mask_pred, cmap="twilight")
+    axes[1].set_title(title)
+    axes[1].legend(handles=[])
+    plt.tight_layout()
+    plt.show()
+
+
+def visualize_compere_predict(
+    img: np.ndarray, mask_pred_1: np.ndarray, mask_pred_2: np.ndarray
+):
+    _, axes = plt.subplots(1, 3, figsize=(10, 5))
+
+    axes[0].imshow(img[0], cmap="grey")
+
+    mask_pred_1, _ = color_mask(mask_pred_1)
+    axes[1].imshow(mask_pred_1, cmap="twilight")
+    axes[1].set_title("Unet")
+    axes[1].legend(handles=[])
+
+    mask_pred_2, _ = color_mask(mask_pred_2)
+    axes[2].imshow(mask_pred_2, cmap="twilight")
+    axes[2].set_title("FNP")
+    axes[2].legend(handles=[])
 
     plt.tight_layout()
     plt.show()
