@@ -2,5 +2,9 @@ __pycache__
 geo_dataset
 geo_dataset.zip
 venv
-models
+models_fpn
+models_unet
 models.zip
+class_view.py
+TODO.txt
+dump
