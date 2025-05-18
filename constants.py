@@ -13,12 +13,12 @@ Y_TEST_DIR = f"{DATSET_NAME}/test_mask/defaultannot"
 
 LABEL_COLORS_FILE = f"{DATSET_NAME}/label_colors.txt"
 
-CLASSES = ["City", "Cloud", "Field", "Mountains", "Sand", "Trees", "Water"]
+CLASSES = ["City", "Cloud", "Field", "Sand", "Trees", "Water"]
 ENCODER = "resnet18"
 ENCODER_WEIGHTS = "imagenet"
 ACTIVATION = "softmax2d"
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-EPOCHS = 200
+EPOCHS = 100
 BATCH_SIZE = 32
 
 INIT_LR = 0.0005
