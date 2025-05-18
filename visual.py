@@ -101,14 +101,16 @@ def visualize_compere_predict(
     _, axes = plt.subplots(1, 3, figsize=(10, 5))
 
     axes[0].imshow(img[0], cmap="grey")
+    axes[1].imshow(img[0], cmap="grey")
+    axes[2].imshow(img[0], cmap="grey")
 
     mask_pred_1, _ = color_mask(mask_pred_1)
-    axes[1].imshow(mask_pred_1, cmap="twilight")
+    axes[1].imshow(mask_pred_1, cmap="twilight", alpha=0.5)
     axes[1].set_title("Unet")
     axes[1].legend(handles=[])
 
     mask_pred_2, _ = color_mask(mask_pred_2)
-    axes[2].imshow(mask_pred_2, cmap="twilight")
+    axes[2].imshow(mask_pred_2, cmap="twilight", alpha=0.5)
     axes[2].set_title("FNP")
     axes[2].legend(handles=[])
 
