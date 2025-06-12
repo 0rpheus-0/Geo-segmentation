@@ -45,15 +45,7 @@ torch.backends.cudnn.deterministic = True
 loss = utils.losses.DiceLoss()
 
 
-# model = smp.Unet(
-#     encoder_name=ENCODER,
-#     encoder_weights=ENCODER_WEIGHTS,
-#     classes=len(CLASSES),
-#     activation=ACTIVATION,
-#     in_channels=1,
-# )
-
-model = smp.FPN(
+model = smp.Unet(
     encoder_name=ENCODER,
     encoder_weights=ENCODER_WEIGHTS,
     classes=len(CLASSES),
