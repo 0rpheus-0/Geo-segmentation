@@ -44,7 +44,7 @@ for image_path in images_path:
     start_proc = time.time()
     with rasterio.open(data_path + image_path) as image_data:
         image = np.array([adjust_band(image_data.read(1))])
-        image = image.astype("float32") / 255
+        image = image.astype("float32")
     end_proc = time.time()
     execution_proc += end_proc - start_proc
 
