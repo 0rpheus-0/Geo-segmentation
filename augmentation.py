@@ -2,7 +2,8 @@ import albumentations as albu
 from rasterio.plot import adjust_band
 
 
-preprocessing_fn = lambda img, **kwargs: adjust_band(img).astype("float32")
+def preprocessing_fn(img, **kwargs):
+    return adjust_band(img).astype("float32")
 
 
 def training_ablumentation():
