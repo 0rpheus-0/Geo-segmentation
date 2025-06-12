@@ -14,7 +14,7 @@ unet = torch.jit.load("models_unet/best_model_new.pt", map_location=DEVICE)
 
 imgdata = rasterio.open(images_paths)
 image = np.array([adjust_band(imgdata.read(1))])
-image = image.astype("float32") / 255
+image = image.astype("float32")
 
 x_tensor = torch.from_numpy(image).to(DEVICE).unsqueeze(0)
 x_tensor = x_tensor

@@ -18,7 +18,7 @@ ENCODER = "resnet18"
 ENCODER_WEIGHTS = "imagenet"
 ACTIVATION = "softmax2d"
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-EPOCHS = 100
+EPOCHS = 70
 BATCH_SIZE = 32
 
 INIT_LR = 0.0005

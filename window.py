@@ -52,7 +52,7 @@ class TiffViewerApp:
 
             image = rasterio.open(file_path)
             image = np.array([adjust_band(image.read(1))])
-            image = image.astype("float32") / 255
+            image = image.astype("float32")
             orig, axes_orig = plt.subplots()
             axes_orig.imshow(image[0], cmap="grey")
             axes_orig.axis("off")

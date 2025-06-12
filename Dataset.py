@@ -3,7 +3,6 @@ import cv2
 from glob import glob
 from torch.utils.data import Dataset as BaseDataset
 import rasterio
-from rasterio.plot import adjust_band
 from constants import LABEL_COLORS_FILE, CLASSES
 
 
@@ -36,7 +35,7 @@ class Dataset(BaseDataset):
 
     def __getitem__(self, i):
         imgdata = rasterio.open(self.images_paths[i])
-        image = np.array([adjust_band(imgdata.read(1))])
+        image = np.array([imgdata.read(1)])
 
         mask = cv2.imread(self.masks_paths[i])
         masks = [cv2.inRange(mask, color, color) for color in self.cls_colors.values()]
