@@ -19,6 +19,7 @@ from constants import (
     INFER_WIDTH,
     LR_DECREASE_STEP,
     LR_DECREASE_COEF,
+    INFER_CHANNEL,
 )
 from Dataset import Dataset
 import augmentation
@@ -50,7 +51,6 @@ model = smp.Unet(
     encoder_weights=ENCODER_WEIGHTS,
     classes=len(CLASSES),
     activation=ACTIVATION,
-    in_channels=1,
 )
 
 
@@ -112,11 +112,11 @@ for i in range(0, EPOCHS):
 
     if max_score < valid_logs["iou_score"]:
         max_score = valid_logs["iou_score"]
-        os.makedirs("models_unet", exist_ok=True)
-        torch.save(model, "models_unet/best_model_new.pth")
-        trace_image = torch.randn(BATCH_SIZE, 1, INFER_HEIGHT, INFER_WIDTH)
+        os.makedirs("models_unet_rgb", exist_ok=True)
+        torch.save(model, "models_unet_rgb/best_model_new.pth")
+        trace_image = torch.randn(BATCH_SIZE, INFER_CHANNEL, INFER_HEIGHT, INFER_WIDTH)
         traced_model = torch.jit.trace(model, trace_image.to(DEVICE))
-        torch.jit.save(traced_model, "models_unet/best_model_new.pt")
+        torch.jit.save(traced_model, "models_unet_rgb/best_model_new.pt")
         print("Model saved!")
 
     print("LR:", optimizer.param_groups[0]["lr"])

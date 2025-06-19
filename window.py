@@ -12,8 +12,9 @@ import visual
 
 class TiffViewerApp:
     def __init__(self, root):
-        self.fpn = torch.jit.load("models_fpn/best_model_new.pt", map_location=DEVICE)
-        self.unet = torch.jit.load("models_unet/best_model_new.pt", map_location=DEVICE)
+        self.unet = torch.jit.load(
+            "models_unet_rgb/best_model_new.pt", map_location=DEVICE
+        )
 
         self.root = root
         self.root.title("GeoViewer")
@@ -24,7 +25,7 @@ class TiffViewerApp:
 
         self.image_frame = tk.Frame(root)
         self.image_frame.grid(row=0, column=0, sticky="nsew")
-        for i in range(3):
+        for i in range(2):
             self.image_frame.grid_columnconfigure(i, weight=1)
 
         self.button_frame = tk.Frame(self.root)
@@ -51,10 +52,12 @@ class TiffViewerApp:
             self.canvases.clear()
 
             image = rasterio.open(file_path)
-            image = np.array([adjust_band(image.read(1))])
+            image = np.array(adjust_band(image.read()))
             image = image.astype("float32")
+            image = np.pad(image, ((0, 0), (1, 1), (0, 0)), mode="edge")
+            image_show = image.transpose(1, 2, 0)
             orig, axes_orig = plt.subplots()
-            axes_orig.imshow(image[0], cmap="grey")
+            axes_orig.imshow(image_show)
             axes_orig.axis("off")
             axes_orig.set_xticks([])
             axes_orig.set_yticks([])
@@ -62,19 +65,16 @@ class TiffViewerApp:
             orig.subplots_adjust(left=0, right=1, top=1, bottom=0)
 
             x_tensor = torch.from_numpy(image).to(DEVICE).unsqueeze(0)
-            x_tensor = x_tensor
-
             predict_mask_1 = self.unet(x_tensor)
-            predict_mask_2 = self.fpn(x_tensor)
 
             masks = []
-            for i, predict_mask in enumerate([predict_mask_1, predict_mask_2]):
+            for i, predict_mask in enumerate(predict_mask_1):
                 predict_mask = predict_mask.squeeze().cpu().detach().numpy()
                 predict_mask = np.argmax(predict_mask, axis=0)
 
                 mask, axes_mask = plt.subplots()
                 predict_mask, _ = visual.color_mask(predict_mask)
-                axes_mask.imshow(image[0], cmap="grey")
+                axes_mask.imshow(image_show, cmap="grey")
                 axes_mask.imshow(predict_mask, cmap="twilight", alpha=0.5)
                 axes_mask.axis("off")
                 axes_mask.set_xticks([])
@@ -84,7 +84,7 @@ class TiffViewerApp:
                 masks.append(mask)
 
             images = [orig] + masks
-            titles = ["Изображение", "U-Net", "FPN"]
+            titles = ["Изображение", "U-Net"]
             for i, (image, title) in enumerate(zip(images, titles)):
                 label = tk.Label(
                     self.image_frame, text=title, font=("Arial", 12, "bold")

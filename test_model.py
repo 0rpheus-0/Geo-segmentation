@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader
 from segmentation_models_pytorch import utils
 
 
-best_model = torch.jit.load("models_unet/best_model_new.pt", map_location=DEVICE)
+best_model = torch.jit.load("models_unet_rgb/best_model_new.pt", map_location=DEVICE)
 
 test_dataset = Dataset(
     X_TEST_DIR,

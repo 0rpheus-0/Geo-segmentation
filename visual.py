@@ -95,14 +95,12 @@ def visualize_predict(img: np.ndarray, mask_pred: np.ndarray):
     plt.show()
 
 
-def visualize_compere_predict(
-    img: np.ndarray, mask_pred_1: np.ndarray, mask_pred_2: np.ndarray
-):
+def visualize_compere_predict(img: np.ndarray, mask_pred_1: np.ndarray):
     _, axes = plt.subplots(1, 3, figsize=(10, 5))
 
-    axes[0].imshow(img[0], cmap="grey")
-    axes[1].imshow(img[0], cmap="grey")
-    axes[2].imshow(img[0], cmap="grey")
+    axes[0].imshow(img[0])
+    axes[1].imshow(img[0])
+    axes[2].imshow(img[0])
     axes[0].axis("off")
     axes[1].axis("off")
     axes[2].axis("off")
@@ -112,11 +110,6 @@ def visualize_compere_predict(
     axes[1].set_title("Unet")
     print(f"{mask_pred_1=}")
     # axes[1].legend(handles=[])
-
-    mask_pred_2, _ = color_mask(mask_pred_2)
-    axes[2].imshow(mask_pred_2, cmap="twilight", alpha=0.5)
-    axes[2].set_title("FNP")
-    # axes[2].legend(handles=[])
 
     plt.tight_layout()
     plt.show()

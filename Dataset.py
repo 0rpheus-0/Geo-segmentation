@@ -35,14 +35,17 @@ class Dataset(BaseDataset):
 
     def __getitem__(self, i):
         imgdata = rasterio.open(self.images_paths[i])
-        image = np.array([imgdata.read(1)])
+        image = np.array(imgdata.read())
+        image = image.transpose(1, 2, 0)
 
         mask = cv2.imread(self.masks_paths[i])
         masks = [cv2.inRange(mask, color, color) for color in self.cls_colors.values()]
         masks = [(m > 0).astype("float32") for m in masks]
         mask = np.stack(masks, axis=-1).astype("float")
 
-        image = image.transpose(1, 2, 0)
+        image = np.pad(image, ((1, 1), (0, 0), (0, 0)), mode="edge")
+        mask = np.pad(mask, ((1, 1), (0, 0), (0, 0)), mode="edge")
+
         if self.augmentation:
             sample = self.augmentation(image=image, mask=mask)
             image, mask = sample["image"], sample["mask"]

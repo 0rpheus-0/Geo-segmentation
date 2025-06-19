@@ -1,15 +1,15 @@
 import torch
 
-DATSET_NAME = "geo_dataset"
+DATSET_NAME = "rgb_dataset"
 
-X_TRAIN_DIR = f"{DATSET_NAME}/train"
-Y_TRAIN_DIR = f"{DATSET_NAME}/train_mask/defaultannot"
+X_TRAIN_DIR = f"{DATSET_NAME}/train_rgb"
+Y_TRAIN_DIR = f"{DATSET_NAME}/train_rgb_mask/defaultannot"
 
-X_VALID_DIR = f"{DATSET_NAME}/validation"
-Y_VALID_DIR = f"{DATSET_NAME}/validation_mask/defaultannot"
+X_VALID_DIR = f"{DATSET_NAME}/validation_rgb"
+Y_VALID_DIR = f"{DATSET_NAME}/validation_rgb_mask/defaultannot"
 
-X_TEST_DIR = f"{DATSET_NAME}/test"
-Y_TEST_DIR = f"{DATSET_NAME}/test_mask/defaultannot"
+X_TEST_DIR = f"{DATSET_NAME}/test_rgb"
+Y_TEST_DIR = f"{DATSET_NAME}/test_rgb_mask/defaultannot"
 
 LABEL_COLORS_FILE = f"{DATSET_NAME}/label_colors.txt"
 
@@ -26,4 +26,5 @@ LR_DECREASE_STEP = 15
 LR_DECREASE_COEF = 2
 
 INFER_WIDTH = 384
-INFER_HEIGHT = 384
+INFER_HEIGHT = 256
+INFER_CHANNEL = 3
