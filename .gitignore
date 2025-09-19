@@ -12,3 +12,6 @@ combine.py
 rgb_dataset
 models_unet_rgb
 models_unet_rgb.zip
+log
+logCUDA.zip
+temp.py
