@@ -2,7 +2,7 @@ import torch
 import numpy as np
 import rasterio
 from rasterio.plot import adjust_band
-from constants import DEVICE, CLASSES
+from constants import DEVICE, CLASSES, INFER_WIDTH, INFER_HEIGHT, INFER_CHANNEL
 import sys
 import os
 import time
@@ -27,7 +27,7 @@ def color_mask(mask: np.ndarray):
     return colored_mask
 
 
-unet = torch.jit.load("models_unet/best_model_new.pt", map_location=DEVICE)
+unet = torch.jit.load("models_unet_rgb/best_model_new.pt", map_location=DEVICE)
 
 try:
     data_path = sys.argv[1]
@@ -41,38 +41,27 @@ execution_proc = 0
 execution_pred = 0
 start = time.time()
 for image_path in images_path:
-    start_proc = time.time()
     with rasterio.open(data_path + image_path) as image_data:
-        image = np.array([adjust_band(image_data.read(1))])
+        image = np.array(adjust_band(image_data.read()))
         image = image.astype("float32")
-    end_proc = time.time()
-    execution_proc += end_proc - start_proc
 
-    start_pred = time.time()
     x_tensor = torch.from_numpy(image).to(DEVICE).unsqueeze(0)
     pr_mask_unet = unet(x_tensor)
     pr_mask_unet = pr_mask_unet.squeeze().cpu().detach().numpy()
     pr_mask_unet = np.argmax(pr_mask_unet, axis=0)
-    end_pred = time.time()
-    execution_pred += end_pred - start_pred
 
-    start_proc = time.time()
     mask = color_mask(pr_mask_unet)
     mask = mask.transpose(2, 0, 1)
 
     meta = {
-        "width": 384,
-        "height": 384,
-        "count": 3,
+        "width": INFER_WIDTH,
+        "height": INFER_HEIGHT,
+        "count": INFER_CHANNEL,
         "dtype": "uint8",
     }
     result_name = result_path + "mask_" + image_path
     with rasterio.open(result_name, "w", **meta) as mask_data:
         mask_data.write(mask)
-    end_proc = time.time()
-    execution_proc += end_proc - start_proc
 end = time.time()
-
 execution = end - start
 print(f"Time: {execution} sec\nSpeed: {len(images_path) / execution} image/sec")
-print(f"Processing {execution_proc}\nPredict {execution_pred}")
