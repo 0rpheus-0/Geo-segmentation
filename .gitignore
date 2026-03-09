@@ -15,3 +15,6 @@ models_unet_rgb.zip
 log
 logCUDA.zip
 temp.py
+denomstation_augmentation.py
+promt.txt
+class_rgb.png
