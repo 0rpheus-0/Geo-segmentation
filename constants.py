@@ -2,14 +2,14 @@ import torch
 
 DATSET_NAME = "rgb_dataset"
 
-X_TRAIN_DIR = f"{DATSET_NAME}/train_rgb"
-Y_TRAIN_DIR = f"{DATSET_NAME}/train_rgb_mask/defaultannot"
+X_TRAIN_DIR = f"{DATSET_NAME}/train/image"
+Y_TRAIN_DIR = f"{DATSET_NAME}/train/mask"
 
-X_VALID_DIR = f"{DATSET_NAME}/validation_rgb"
-Y_VALID_DIR = f"{DATSET_NAME}/validation_rgb_mask/defaultannot"
+X_VALID_DIR = f"{DATSET_NAME}/validation/image"
+Y_VALID_DIR = f"{DATSET_NAME}/validation/mask"
 
-X_TEST_DIR = f"{DATSET_NAME}/test_rgb"
-Y_TEST_DIR = f"{DATSET_NAME}/test_rgb_mask/defaultannot"
+X_TEST_DIR = f"{DATSET_NAME}/test/image"
+Y_TEST_DIR = f"{DATSET_NAME}/test/mask"
 
 LABEL_COLORS_FILE = f"{DATSET_NAME}/label_colors.txt"
 
