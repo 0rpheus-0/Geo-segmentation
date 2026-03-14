@@ -54,6 +54,7 @@ def train_model(
     model_save_name="best_model_2",
     plot_path="losses_IOU.png",
     seed=42,
+    progress_callback=None,
 ):
     """
     Обучает модель сегментации и сохраняет лучшую модель.
@@ -111,6 +112,7 @@ def train_model(
     max_score = 0
     loss_logs = {"train": [], "val": []}
     metric_logs = {"train": [], "val": []}
+
     for i in range(0, epochs):
         print(f"\nEpoch: {i}")
         train_logs = train_epoch.run(train_loader)
@@ -140,6 +142,15 @@ def train_model(
         if i > 0 and i % lr_decrease_step == 0:
             print("Decrease decoder learning rate")
             optimizer.param_groups[0]["lr"] /= lr_decrease_coef
+
+        # Вызов колбэка для GUI
+        if progress_callback is not None:
+            progress_callback(
+                epoch=i,
+                total_epochs=epochs,
+                loss_logs=loss_logs,
+                metric_logs=metric_logs,
+            )
 
     fig, axes = plt.subplots(1, 2, figsize=(10, 5))
     axes[0].plot(loss_logs["train"], label="train")
