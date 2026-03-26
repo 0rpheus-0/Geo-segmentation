@@ -223,14 +223,6 @@ def format_bytes(num_bytes: float):
 
 model = torch.jit.load("models_unet_rgb/best_model_new.pt", map_location=DEVICE)
 
-df = test_batch_sizes(
-    model,
-    batch_sizes,
-    image_count,
-    DEVICE,
-)
-df.to_excel("log/batch_performance.xlsx", index=False)
-
 
 def plot_results(df, save_path=None):
     fig, axes = plt.subplots(3, 2, figsize=(14, 10))
@@ -284,4 +276,12 @@ def plot_results(df, save_path=None):
     plt.show()
 
 
-plot_results(df, save_path="log/performance_graphs.png")
+if __name__ == "__main__":
+    df = test_batch_sizes(
+        model,
+        batch_sizes,
+        image_count,
+        DEVICE,
+    )
+    df.to_excel("log/batch_performance.xlsx", index=False)
+    plot_results(df, save_path="log/performance_graphs.png")

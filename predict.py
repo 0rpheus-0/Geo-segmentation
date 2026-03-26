@@ -55,29 +55,32 @@ def crop_mask(mask, original_shape):
     return mask[:, :H, :W]
 
 
-images_paths = sys.argv[1]
-unet = torch.jit.load("models_unet_rgb/best_model_new.pt", map_location=DEVICE)
+if __name__ == "__main__":
+    images_paths = sys.argv[1]
+    unet = torch.jit.load("models_unet_rgb/best_model_new.pt", map_location=DEVICE)
 
-# todo проверка на типы
+    # todo проверка на типы
 
-image_f = rasterio.open(images_paths)
-image = np.array(adjust_band(image_f.read([1, 2, 3])))
-image = adjust_band(np.exp(2 * image))
-image = image.astype("float32")
+    image_f = rasterio.open(images_paths)
+    image = np.array(adjust_band(image_f.read([1, 2, 3])))
+    image = adjust_band(np.exp(2 * image))
+    image = image.astype("float32")
 
-padding_image = pad_image(image, (INFER_HEIGHT, INFER_WIDTH))
-tiles, positions = split_image(padding_image, (INFER_HEIGHT, INFER_WIDTH))
+    padding_image = pad_image(image, (INFER_HEIGHT, INFER_WIDTH))
+    tiles, positions = split_image(padding_image, (INFER_HEIGHT, INFER_WIDTH))
 
-masks = []
-for tile in tiles:
-    x_tensor = torch.from_numpy(tile).to(DEVICE).unsqueeze(0)
-    pr_mask_unet = unet(x_tensor)
-    pr_mask_unet = pr_mask_unet.squeeze().cpu().detach().numpy()
-    masks.append(pr_mask_unet)
+    masks = []
+    for tile in tiles:
+        x_tensor = torch.from_numpy(tile).to(DEVICE).unsqueeze(0)
+        pr_mask_unet = unet(x_tensor)
+        pr_mask_unet = pr_mask_unet.squeeze().cpu().detach().numpy()
+        masks.append(pr_mask_unet)
 
-mask = merge_mask(masks, positions, padding_image.shape, (INFER_HEIGHT, INFER_WIDTH))
-mask = crop_mask(mask, image.shape)
+    mask = merge_mask(
+        masks, positions, padding_image.shape, (INFER_HEIGHT, INFER_WIDTH)
+    )
+    mask = crop_mask(mask, image.shape)
 
-visual.visualize_compere_predict(image.transpose(1, 2, 0), np.argmax(mask, axis=0))
+    visual.visualize_compere_predict(image.transpose(1, 2, 0), np.argmax(mask, axis=0))
 
-plt.show()
+    plt.show()

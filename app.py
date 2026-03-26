@@ -310,7 +310,7 @@ class SegmentationApp(ctk.CTk):
             text="График обучения появится здесь", image=None
         )
         self.train_metrics_panel.configure(text="Метрики появятся здесь")
-        self.dataset_label = self.train_dataset_title
+        self.dataset_label = self.train_dataset_toggle
         # Пути к данным (выбраны пользователем)
         x_train_dir = getattr(self, "x_train_dir", None)
         y_train_dir = getattr(self, "y_train_dir", None)
