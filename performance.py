@@ -30,58 +30,55 @@ def batch_performance(
     iterations,
     batch_size,
     device,
+    handle=None,
+    progress_callback=None,
 ):
     model = model.to(device)
     input_tensor = torch.randn(batch_size, INFER_CHANNEL, INFER_HEIGHT, INFER_WIDTH).to(
         device
     )
     model.eval()
-    torch.no_grad()
-
-    gpu_available = device.type == "cuda"
-    if gpu_available:
-        handle = init_nvml()
-        gpu_available = handle is not None
-
-    if gpu_available:
-        torch.cuda.reset_peak_memory_stats()
-        torch.cuda.synchronize()
-
-    activities = [ProfilerActivity.CPU]
-    if gpu_available:
-        activities.append(ProfilerActivity.CUDA)
-
-    process = psutil.Process(os.getpid())
-
-    forward_times = []
-    cpu_load = []
-    gpu_load = [] if gpu_available else None
-
-    with profile(
-        activities=activities,
-        record_shapes=True,
-        profile_memory=True,
-    ) as prof:
-        start = time.time()
-        for _ in range(iterations):
-            start_forward = time.time()
-            _ = model(input_tensor)
-            end_forward = time.time()
-
-            forward_times.append(end_forward - start_forward)
-            cpu_load.append(process.cpu_percent(interval=None))
-            if gpu_available:
-                gpu_load.append(pynvml.nvmlDeviceGetUtilizationRates(handle).gpu)
-                torch.cuda.synchronize()
-        end = time.time()
-        mem = process.memory_info().rss / 1024**2
-        gpu_mem_used = (
-            pynvml.nvmlDeviceGetMemoryInfo(handle).used / 1024**2
-            if gpu_available
-            else None
-        )
+    with torch.no_grad():
+        gpu_available = device.type == "cuda" and handle is not None
         if gpu_available:
-            pynvml.nvmlShutdown()
+            torch.cuda.reset_peak_memory_stats()
+            torch.cuda.synchronize()
+
+        activities = [ProfilerActivity.CPU]
+        if gpu_available:
+            activities.append(ProfilerActivity.CUDA)
+
+        process = psutil.Process(os.getpid())
+
+        forward_times = []
+        cpu_load = []
+        gpu_load = [] if gpu_available else None
+
+        with profile(
+            activities=activities,
+            record_shapes=True,
+            profile_memory=True,
+        ) as prof:
+            start = time.time()
+            for iteration_index in range(iterations):
+                start_forward = time.time()
+                _ = model(input_tensor)
+                end_forward = time.time()
+
+                forward_times.append(end_forward - start_forward)
+                cpu_load.append(process.cpu_percent(interval=None))
+                if gpu_available:
+                    gpu_load.append(pynvml.nvmlDeviceGetUtilizationRates(handle).gpu)
+                    torch.cuda.synchronize()
+                if progress_callback:
+                    progress_callback((iteration_index + 1) / iterations)
+            end = time.time()
+            mem = process.memory_info().rss / 1024**2
+            gpu_mem_used = (
+                pynvml.nvmlDeviceGetMemoryInfo(handle).used / 1024**2
+                if gpu_available
+                else None
+            )
 
     cpu_count = psutil.cpu_count(logical=True)
     cpu_load = [x / cpu_count for x in cpu_load]

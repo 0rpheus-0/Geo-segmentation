@@ -4,6 +4,9 @@ import rasterio
 import numpy as np
 from rasterio.plot import adjust_band
 from PIL import Image, ImageTk
+import matplotlib
+
+matplotlib.use("Agg")  # Use non-interactive backend to avoid threading issues
 import matplotlib.pyplot as plt
 
 import warnings
@@ -18,7 +21,9 @@ class SegmentationApp(ctk.CTk):
         self.title("Image Segmentation App")
         self.geometry("1000x500")
         self.model = self.load_model()
+        self.gpu_handle = self.init_gpu_handle()
         self._create_tabs()
+        self.protocol("WM_DELETE_WINDOW", self.on_closing)
 
     def load_model(self):
         import torch
@@ -34,6 +39,26 @@ class SegmentationApp(ctk.CTk):
             print(f"Ошибка загрузки модели: {e}")
             return None
 
+    def init_gpu_handle(self):
+        try:
+            import pynvml
+
+            pynvml.nvmlInit()
+            return pynvml.nvmlDeviceGetHandleByIndex(0)
+        except pynvml.NVMLError as e:
+            if e.value == pynvml.NVML_ERROR_ALREADY_INITIALIZED:
+                try:
+                    return pynvml.nvmlDeviceGetHandleByIndex(0)
+                except:
+                    print("Failed to get GPU handle after already initialized")
+                    return None
+            else:
+                print(f"NVML init failed: {e}")
+                return None
+        except Exception as e:
+            print(f"NVML init failed: {e}")
+            return None
+
     def _create_tabs(self):
         self.tabview = ctk.CTkTabview(self)
         self.tabview.pack(fill="both", expand=True, padx=10, pady=10)
@@ -41,6 +66,7 @@ class SegmentationApp(ctk.CTk):
         self.tab_segment = self.tabview.add("Сегментация")
         self.tab_train = self.tabview.add("Обучение")
         self.tab_test = self.tabview.add("Тестирование")
+        self.tab_performance = self.tabview.add("Нагрузочное тестирование")
 
         # --- Сегментация ---
         self.segment_frame = ctk.CTkFrame(self.tab_segment)
@@ -175,6 +201,60 @@ class SegmentationApp(ctk.CTk):
             font=("Arial", 14),
         )
         self.choose_test_dataset_button.pack(anchor="nw", pady=(0, 20))
+
+        # --- Нагрузочное тестирование ---
+        self.performance_frame = ctk.CTkFrame(self.tab_performance)
+        self.performance_frame.pack(fill="both", expand=True, padx=20, pady=20)
+
+        self.performance_status_label = ctk.CTkLabel(
+            self.performance_frame,
+            text="Готово к нагрузочному тестированию",
+            anchor="w",
+            font=("Arial", 14),
+        )
+        self.performance_status_label.pack(anchor="nw", pady=(0, 10), padx=10, fill="x")
+
+        from constants import DEVICE
+
+        hardware_text = f"Оборудование: {'GPU' if DEVICE.type == 'cuda' else 'CPU'}"
+        self.performance_hardware_label = ctk.CTkLabel(
+            self.performance_frame,
+            text=hardware_text,
+            anchor="w",
+            font=("Arial", 12),
+            text_color="#CCCCCC",
+        )
+        self.performance_hardware_label.pack(anchor="nw", padx=10, fill="x")
+
+        self.start_performance_button = ctk.CTkButton(
+            self.performance_frame,
+            text="Запустить нагрузочное тестирование",
+            command=self.start_performance_testing,
+            font=("Arial", 16, "bold"),
+        )
+        self.start_performance_button.pack(anchor="nw", pady=(0, 20))
+
+        self.performance_progress = ctk.CTkProgressBar(self.performance_frame)
+        self.performance_progress.set(0)
+        self.performance_progress.pack(fill="x", pady=(0, 20), padx=10)
+
+        self.performance_plot_panel = ctk.CTkLabel(
+            self.performance_frame,
+            text="График производительности появится здесь",
+            anchor="center",
+            font=("Arial", 16),
+        )
+        self.performance_plot_panel.pack(
+            fill="both", expand=True, padx=10, pady=(0, 20)
+        )
+
+        self.performance_results_panel = ctk.CTkLabel(
+            self.performance_frame,
+            text="Результаты тестирования появятся здесь",
+            anchor="center",
+            font=("Arial", 16),
+        )
+        self.performance_results_panel.pack(fill="both", expand=True, padx=10)
 
     def choose_train_dataset(self):
         import os
@@ -500,6 +580,202 @@ class SegmentationApp(ctk.CTk):
         except Exception as e:
             self.image_panel.configure(text=f"Ошибка загрузки: {e}")
             self.mask_panel.configure(text="Маска появится здесь", image=None)
+
+    def _update_performance_plot(self, results):
+        import matplotlib.pyplot as plt
+        import io
+
+        batch_sizes = [res["Batch Size"] for res in results]
+        throughputs = [res["Throughput (image/s)"] for res in results]
+        forward_times = [res["Forward Time (s)"] for res in results]
+        cpu_loads = [res["CPU Load (%)"] for res in results]
+        cpu_mems = [res["CPU Mem Used (MB)"] for res in results]
+        gpu_loads = [
+            res["GPU Load (%)"] if isinstance(res["GPU Load (%)"], (int, float)) else 0
+            for res in results
+        ]
+        gpu_mems = [
+            res["GPU Mem Used (MB)"]
+            if isinstance(res["GPU Mem Used (MB)"], (int, float))
+            else 0
+            for res in results
+        ]
+
+        plt.style.use("dark_background")
+        fig, axes = plt.subplots(2, 3, figsize=(14, 8))
+
+        # Пропускная способность
+        axes[0, 0].plot(batch_sizes, throughputs, marker="o", color="#00BFFF")
+        axes[0, 0].set_title("Пропускная способность", color="#CCCCCC")
+        axes[0, 0].set_xlabel("Batch Size")
+        axes[0, 0].set_ylabel("Throughput (image/s)")
+        axes[0, 0].grid(True, color="#444444")
+        axes[0, 0].set_facecolor("#222222")
+        axes[0, 0].tick_params(axis="x", colors="#CCCCCC")
+        axes[0, 0].tick_params(axis="y", colors="#CCCCCC")
+        for spine in axes[0, 0].spines.values():
+            spine.set_color("#CCCCCC")
+
+        # Загрузка CPU
+        axes[0, 1].plot(batch_sizes, cpu_loads, marker="o", color="red")
+        axes[0, 1].set_title("Загрузка CPU", color="#CCCCCC")
+        axes[0, 1].set_xlabel("Batch Size")
+        axes[0, 1].set_ylabel("CPU Load (%)")
+        axes[0, 1].grid(True, color="#444444")
+        axes[0, 1].set_facecolor("#222222")
+        axes[0, 1].tick_params(axis="x", colors="#CCCCCC")
+        axes[0, 1].tick_params(axis="y", colors="#CCCCCC")
+        for spine in axes[0, 1].spines.values():
+            spine.set_color("#CCCCCC")
+
+        # Загрузка GPU
+        axes[0, 2].plot(batch_sizes, gpu_loads, marker="o", color="magenta")
+        axes[0, 2].set_title("Загрузка GPU", color="#CCCCCC")
+        axes[0, 2].set_xlabel("Batch Size")
+        axes[0, 2].set_ylabel("GPU Load (%)")
+        axes[0, 2].grid(True, color="#444444")
+        axes[0, 2].set_facecolor("#222222")
+        axes[0, 2].tick_params(axis="x", colors="#CCCCCC")
+        axes[0, 2].tick_params(axis="y", colors="#CCCCCC")
+        for spine in axes[0, 2].spines.values():
+            spine.set_color("#CCCCCC")
+
+        # Время forward pass
+        axes[1, 0].plot(batch_sizes, forward_times, marker="o", color="orange")
+        axes[1, 0].set_title("Время forward pass", color="#CCCCCC")
+        axes[1, 0].set_xlabel("Batch Size")
+        axes[1, 0].set_ylabel("Forward Time (s)")
+        axes[1, 0].grid(True, color="#444444")
+        axes[1, 0].set_facecolor("#222222")
+        axes[1, 0].tick_params(axis="x", colors="#CCCCCC")
+        axes[1, 0].tick_params(axis="y", colors="#CCCCCC")
+        for spine in axes[1, 0].spines.values():
+            spine.set_color("#CCCCCC")
+
+        # Память CPU
+        axes[1, 1].plot(batch_sizes, cpu_mems, marker="o", color="green")
+        axes[1, 1].set_title("Память CPU", color="#CCCCCC")
+        axes[1, 1].set_xlabel("Batch Size")
+        axes[1, 1].set_ylabel("CPU Mem Used (MB)")
+        axes[1, 1].grid(True, color="#444444")
+        axes[1, 1].set_facecolor("#222222")
+        axes[1, 1].tick_params(axis="x", colors="#CCCCCC")
+        axes[1, 1].tick_params(axis="y", colors="#CCCCCC")
+        for spine in axes[1, 1].spines.values():
+            spine.set_color("#CCCCCC")
+
+        # Память GPU
+        axes[1, 2].plot(batch_sizes, gpu_mems, marker="o", color="cyan")
+        axes[1, 2].set_title("Память GPU", color="#CCCCCC")
+        axes[1, 2].set_xlabel("Batch Size")
+        axes[1, 2].set_ylabel("GPU Mem Used (MB)")
+        axes[1, 2].grid(True, color="#444444")
+        axes[1, 2].set_facecolor("#222222")
+        axes[1, 2].tick_params(axis="x", colors="#CCCCCC")
+        axes[1, 2].tick_params(axis="y", colors="#CCCCCC")
+        for spine in axes[1, 2].spines.values():
+            spine.set_color("#CCCCCC")
+
+        fig.patch.set_facecolor("#222222")
+        fig.tight_layout()
+
+        buf = io.BytesIO()
+        fig.savefig(buf, format="png")
+        buf.seek(0)
+        from PIL import Image
+
+        img = Image.open(buf)
+        img = img.resize((900, 500))
+        try:
+            self._performance_plot_img = ctk.CTkImage(light_image=img, size=(900, 500))
+        except Exception:
+            self._performance_plot_img = ImageTk.PhotoImage(img)
+        self.performance_plot_panel.configure(image=self._performance_plot_img, text="")
+        plt.close(fig)
+
+    def on_closing(self):
+        if self.gpu_handle is not None:
+            import pynvml
+
+            pynvml.nvmlShutdown()
+        self.destroy()
+
+    def start_performance_testing(self):
+        import threading
+        from performance import batch_performance, batch_sizes, image_count
+        from constants import DEVICE
+
+        self.performance_status_label.configure(text="Нагрузочное тестирование...")
+        self.performance_results_panel.configure(text="")
+        self.performance_progress.set(0)
+
+        def run_performance_test():
+            try:
+                if self.model is None:
+                    self.after(
+                        0,
+                        lambda: self.performance_results_panel.configure(
+                            text="Модель не загружена!"
+                        ),
+                    )
+                    return
+
+                results = []
+                for batch_size in batch_sizes:
+                    iterations = int(image_count / batch_size)
+                    self.after(
+                        0,
+                        lambda bs=batch_size: self.performance_status_label.configure(
+                            text=f"Тестирование batch size: {bs}"
+                        ),
+                    )
+                    self.after(0, lambda: self.performance_progress.set(0))
+
+                    def batch_progress(p):
+                        self.after(0, lambda: self.performance_progress.set(p))
+
+                    res = batch_performance(
+                        self.model,
+                        iterations,
+                        batch_size,
+                        DEVICE,
+                        self.gpu_handle,
+                        progress_callback=batch_progress,
+                    )
+                    results.append(res)
+
+                    self.after(
+                        0,
+                        lambda res=res, results=results: self._update_performance_plot(
+                            results
+                        ),
+                    )
+
+                import pandas as pd
+
+                df = pd.DataFrame(results)
+                df.to_excel("./log/performance_results.xlsx", index=False)
+
+                text = "Результаты сохранены в ./log/performance_results.xlsx\n\n"
+                for res in results:
+                    text += f"Batch Size: {res['Batch Size']}\n"
+                    text += f"Throughput (image/s): {res['Throughput (image/s)']}\n"
+                    text += f"Total Time (s): {res['Total Time (s)']}\n"
+                    text += f"CPU Load (%): {res['CPU Load (%)']:.2f}\n"
+                    text += f"GPU Load (%): {res['GPU Load (%)']}\n\n"
+                self.after(
+                    0, lambda: self.performance_results_panel.configure(text=text)
+                )
+                self.after(0, lambda: self.performance_progress.set(1))
+            except Exception as e:
+                error_text = f"Ошибка тестирования: {e}"
+                self.after(
+                    0,
+                    lambda: self.performance_results_panel.configure(text=error_text),
+                )
+                self.after(0, lambda: self.performance_progress.set(0))
+
+        threading.Thread(target=run_performance_test, daemon=True).start()
 
 
 if __name__ == "__main__":
